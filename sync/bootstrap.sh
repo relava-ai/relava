@@ -86,6 +86,31 @@ elif [ -d "$WIKI_TEMPLATE" ]; then
     echo "  + bootstrapped personal wiki from wiki-template/"
 fi
 
+# 3b. Seed agent-skill-template/'s agents and skills into the kb repo, one
+#     item at a time (not the whole-directory check step 3 uses for wiki/,
+#     since $REPO/agents and $REPO/skills may already exist with real
+#     content — a user's own agents/skills, or items already seeded on a
+#     previous run). Never overwrites an existing item of the same name; the
+#     reconcile_dir() logic in claude_code.sh (already run via step 4 below)
+#     is what actually symlinks whatever lands here into ~/.claude — this
+#     step only needs to get the template content into the repo once.
+AGENT_SKILL_TEMPLATE="$(cd "$SYNC_DIR/.." && pwd)/agent-skill-template"
+if [ -d "$AGENT_SKILL_TEMPLATE" ]; then
+    for kind in agents skills; do
+        mkdir -p "$REPO/$kind"
+        for item in "$AGENT_SKILL_TEMPLATE/$kind"/*; do
+            [ -e "$item" ] || continue
+            name_only="$(basename "$item")"
+            if [ -e "$REPO/$kind/$name_only" ]; then
+                echo "  = $kind/$name_only already present, not overwriting"
+            else
+                cp -R "$item" "$REPO/$kind/$name_only"
+                echo "  + seeded $kind/$name_only from agent-skill-template/"
+            fi
+        done
+    done
+fi
+
 # 4. Populate ~/.claude/{agents,skills,commands} etc. immediately, rather than
 #    waiting for the next hook to fire.
 bash "$SYNC_DIR/sync.sh" full

@@ -54,6 +54,32 @@ small `.cmd` shim so native shells find it too, routed through Git Bash undernea
 - Your personal wiki (`wiki/` in the kb repo, bootstrapped from `wiki-template/` on
   first run).
 
+## Meta-tooling: agent-creator, skill-creator, plan
+
+First bootstrap also seeds a small set of default agents/skills into your kb repo
+(then symlinked into `~/.claude/` like everything else) — a self-improving default,
+not just a sync tool:
+
+- **`agent-creator`** + **`agent-create`** (its authoring standard) — creates a new
+  Claude Code agent end-to-end, including a paired evaluator if the agent produces
+  reviewable output.
+- **`skill-creator`** + **`skill-create`** — the standalone-skill counterpart: creates
+  a skill with no agent attached. Coexists with Anthropic's installed marketplace
+  `skill-creator` plugin if you have it — this one doesn't assume it's present, and
+  pairs every skill it writes with a review pass.
+- **`agent-create-evaluator`**/`agent-create-evaluate` and
+  `skill-create-evaluator`/`skill-create-evaluate` — the paired evaluators above
+  actually use. Evaluator-pairing is the hard default: anything these agents produce
+  gets graded against concrete PASS/FAIL criteria before being called done, not just
+  generated once and left.
+- **`plan`** — a plan-first workflow for non-trivial multi-step work: write a plan
+  doc (tasks + dependencies) → sync GitHub issues → execute one item at a time, never
+  a whole batch unasked.
+
+Seeded once per item, idempotently — re-running `install.sh`/`bootstrap.sh` never
+overwrites an item you've already customized, or anything of the same name you had
+before relava was ever installed.
+
 Sync runs automatically via three Claude Code hooks, wired into
 `~/.claude/settings.json` by `bootstrap.sh`:
 
@@ -156,14 +182,17 @@ install.sh                installs the `relava` command + runs first-run setup
 sync/                   bash: hook-invoked pull/push, no daemon
   sync.sh               pull | push | full
   init.sh               friendly first-run entry point
-  bootstrap.sh           one-time hook wiring + kb repo setup
+  bootstrap.sh           one-time hook wiring + kb repo + meta-tooling setup
   denylist.txt           shared secret-pattern denylist
   relava.tpl             template for the installed `relava` command
   adapters/
     claude_code.sh        reconciles ~/.claude/{agents,skills,commands}
   tests/
-    nuke-and-restore.sh    delete everything, re-bootstrap, verify full recovery
+    nuke-and-restore.sh     delete everything, re-bootstrap, verify full recovery
+    adopt-preexisting.sh    pre-existing ~/.claude content survives first bootstrap
+    agent-skill-seed.sh     meta-tooling seeding is idempotent, never overwrites
 wiki-template/           personal wiki skeleton, bootstrapped into your kb repo
+agent-skill-template/    agent-creator/skill-creator/plan, seeded into your kb repo
 ```
 
 ## The `relava` command
