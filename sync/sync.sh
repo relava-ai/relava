@@ -108,7 +108,10 @@ push_if_changes() {
     if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' > /dev/null 2>&1; then
         # Normal case: upstream tracking exists, so unpushed-commit count is a
         # cheap local check — no network call unless there's genuinely
-        # something to send.
+        # something to send. @{upstream} is git's own ref syntax (the
+        # configured upstream tracking branch), passed through literally as
+        # a git argument — not shell brace expansion.
+        # shellcheck disable=SC1083
         [ "$(git rev-list --count @{upstream}..HEAD 2>/dev/null || echo 0)" != 0 ] || return 0
         git push --quiet || {
             # Remote advanced during the turn: reconcile, then retry once.
