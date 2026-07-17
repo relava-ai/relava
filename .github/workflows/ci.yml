@@ -45,3 +45,5 @@ jobs:
         run: bash sync/tests/nuke-and-restore.sh
       - name: sync/tests/adopt-preexisting.sh
         run: bash sync/tests/adopt-preexisting.sh
+      - name: sync/tests/agent-skill-seed.sh
+        run: bash sync/tests/agent-skill-seed.sh
