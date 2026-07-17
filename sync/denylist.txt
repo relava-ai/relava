@@ -1,0 +1,25 @@
+# Shared denylist — one glob pattern per line, checked against both the full
+# path and the basename of every file before it's read or committed.
+# Blank lines and lines starting with # are ignored.
+#
+# Every adapter (sync/adapters/*.sh) and sync.sh itself check against this
+# file via denylist-check.sh's is_denylisted(). This is the one place these
+# patterns are defined — see EXECUTION_PLAN.md §0/§2a for why it's shared
+# rather than duplicated per adapter.
+
+CLAUDE.local.md
+transcripts/*
+*/transcripts/*
+*.pem
+*.key
+*.p12
+*.pfx
+*credential*
+*secret*
+.env
+.env.*
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+*.token
