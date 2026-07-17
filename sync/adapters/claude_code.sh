@@ -177,10 +177,14 @@ sync_memory() {
     # Mirror deletions: $mem_dst is entirely Relava-managed (unlike the
     # agents/skills case, there's no legitimate reason for a user to hand-place
     # files here), so it's safe to remove anything no longer in the source.
+    # ${mem_dst:?}/${name_only:?} guard against either ever being empty before
+    # an rm -rf — mem_dst is always non-empty in practice ($REPO always has a
+    # fallback default), but this fails loudly instead of silently expanding
+    # to a dangerous path if that ever stops being true.
     for item in "$mem_dst"/*; do
         [ -e "$item" ] || continue
         name_only="$(basename "$item")"
-        [ -e "$mem_src/$name_only" ] || rm -rf "$mem_dst/$name_only"
+        [ -e "$mem_src/$name_only" ] || rm -rf "${mem_dst:?}/${name_only:?}"
     done
 }
 

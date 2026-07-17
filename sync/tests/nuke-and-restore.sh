@@ -37,12 +37,23 @@ content_matches() {
 echo "--- seed a remote with content ---"
 git init --bare --quiet "$WORKDIR/remote.git"
 git clone --quiet "$WORKDIR/remote.git" "$WORKDIR/seed"
+# Force the branch name explicitly rather than relying on git's own
+# init.defaultBranch — that's ambient machine config (varies: some
+# platforms/installs default to "master", not "main") and this test must
+# not depend on it to be portable.
+git -C "$WORKDIR/seed" checkout -b main --quiet
 git -C "$WORKDIR/seed" config user.email "test@relava.local"
 git -C "$WORKDIR/seed" config user.name "Relava Test"
 mkdir -p "$WORKDIR/seed/agents"
 echo "# seeded agent" > "$WORKDIR/seed/agents/seeded.md"
 git -C "$WORKDIR/seed" add -A
 git -C "$WORKDIR/seed" commit --quiet -m seed
+# The bare repo's own HEAD symref still points at whatever branch name
+# init --bare defaulted to (not necessarily "main") until told otherwise —
+# pushing a "main" branch to it doesn't retarget HEAD by itself, and a
+# clone that can't resolve HEAD warns "remote HEAD refers to nonexistent
+# ref" and checks out nothing. Point it at "main" explicitly.
+git -C "$WORKDIR/remote.git" symbolic-ref HEAD refs/heads/main
 git -C "$WORKDIR/seed" push --quiet -u origin main
 
 echo "--- first bootstrap ---"

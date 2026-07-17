@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        # --severity=warning drops info-level notes that are correct as-is
+        # here: SC1091 (can't statically follow a dynamically-built source
+        # path — fine, the path is real at runtime) and SC2016 (single
+        # quotes not expanding inside `bash -c '...' _ "$arg"` calls in
+        # adopt-preexisting.sh — intentional, $1 is meant to bind to the
+        # passed argument, not expand in the outer shell).
+        run: shellcheck --severity=warning install.sh sync/*.sh sync/adapters/*.sh sync/tests/*.sh sync/relava.tpl
+
+  team-promotion-grep-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: grep for team/promotion/nomination/steward language
+        # .github/ is excluded because this check's own regex necessarily
+        # contains the words it's looking for — this is CI infra, not
+        # shipped product content, the same reasoning that exempts
+        # relava-pipeline's own internal planning docs from the equivalent
+        # check there. Every other file in this repo has zero legitimate
+        # reason to mention team/promotion concepts at all.
+        run: |
+          if grep -rniE '\bteam\b|promot|nominat|steward' --exclude-dir=.git --exclude-dir=.github .; then
+            echo "::error::Found team/promotion/nomination/steward language in the OSS repo — this package must not mention these concepts anywhere, not even the word. See README.md for why."
+            exit 1
+          fi
+          echo "clean"
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: sync/tests/nuke-and-restore.sh
+        run: bash sync/tests/nuke-and-restore.sh
+      - name: sync/tests/adopt-preexisting.sh
+        run: bash sync/tests/adopt-preexisting.sh

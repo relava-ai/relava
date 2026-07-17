@@ -27,7 +27,13 @@ is_denylisted() {
     while IFS= read -r pattern || [ -n "$pattern" ]; do
         [ -z "$pattern" ] && continue
         case "$pattern" in \#*) continue ;; esac
+        # $pattern must expand as a glob on both of the next two lines (e.g.
+        # "transcripts/*", "*.pem") for case's own matching to work —
+        # quoting it would make every pattern match only itself literally,
+        # breaking every glob-shaped entry in denylist.txt.
+        # shellcheck disable=SC2254
         case "$path" in $pattern) return 0 ;; esac
+        # shellcheck disable=SC2254
         case "$base" in $pattern) return 0 ;; esac
     done < "$RELAVA_DENYLIST_FILE"
 
