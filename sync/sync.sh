@@ -100,7 +100,24 @@ push_if_changes() {
     done < <(git diff --cached --name-only -z)
     [ "$blocked" = 0 ] || echo "relava sync: denylisted file(s) blocked from this sync — check the adapter that wrote them" >&2
 
-    git diff --cached --quiet || git commit --quiet -m "sync from $(hostname) $(date +"%Y-%m-%dT%H:%M:%S%z")"
+    if ! git diff --cached --quiet; then
+        # A genuinely fresh machine (git installed, never configured) has no
+        # user.name/user.email anywhere — git's own commit failure message
+        # ("Author identity unknown... fatal: empty ident name") is accurate
+        # but unfriendly for a tool that's supposed to run silently from a
+        # hook. Check first and give a clear, actionable message instead;
+        # never fabricate an identity on the user's behalf. Changes stay
+        # staged (nothing lost) — the next sync commits them once identity
+        # is configured. Matches this script's own "never blocks, always
+        # exits 0" contract (see header).
+        if git config user.name > /dev/null 2>&1 && git config user.email > /dev/null 2>&1; then
+            git commit --quiet -m "sync from $(hostname) $(date +"%Y-%m-%dT%H:%M:%S%z")"
+        else
+            echo "relava sync: no git identity configured — changes staged but not committed." >&2
+            echo "  Run: git config --global user.name \"Your Name\" && git config --global user.email \"you@example.com\"" >&2
+            echo "  Then re-sync (automatic on the next turn, or: bash $SCRIPT_DIR/sync.sh push)" >&2
+        fi
+    fi
 
     # No remote configured at all -> local-only repo, nothing to push to.
     git remote get-url origin > /dev/null 2>&1 || return 0

@@ -37,6 +37,11 @@ content_matches() {
 echo "--- seed a remote with content ---"
 git init --bare --quiet "$WORKDIR/remote.git"
 git clone --quiet "$WORKDIR/remote.git" "$WORKDIR/seed"
+# Force the branch name explicitly rather than relying on git's own
+# init.defaultBranch — that's ambient machine config (varies: some
+# platforms/installs default to "master", not "main") and this test must
+# not depend on it to be portable.
+git -C "$WORKDIR/seed" checkout -b main --quiet
 git -C "$WORKDIR/seed" config user.email "test@relava.local"
 git -C "$WORKDIR/seed" config user.name "Relava Test"
 mkdir -p "$WORKDIR/seed/agents"
