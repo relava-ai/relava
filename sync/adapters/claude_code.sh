@@ -53,6 +53,35 @@ reconcile_dir() {
 
     # macOS/Linux: real symlinks, safe to reconcile every phase.
     local item name_only link
+
+    # Adopt any real (non-symlink) content that already lives directly under
+    # $dst but has no counterpart in $src yet — the common case of installing
+    # skills/agents/commands before relava was ever wired in. The repo is
+    # already canonical for every other item this function manages; make it
+    # canonical here too by moving the content in, then let the loop below
+    # symlink it straight back like any other repo-sourced item.
+    for item in "$dst"/*; do
+        [ -e "$item" ] || continue
+        [ -L "$item" ] && continue
+        name_only="$(basename "$item")"
+        if [ -e "$item/.git" ]; then
+            # A nested git repo (e.g. a plugin/marketplace-installed skill
+            # collection) has its own identity and history — adopting it would
+            # bury someone else's repo as a plain subtree inside the personal
+            # kb repo (git records it as a dangling gitlink, not real content,
+            # so the data wouldn't even round-trip through a clone). Leave it
+            # local-only and unmanaged, like an unresolved-conflict item.
+            echo "relava sync: $item is its own git repo — leaving it unmanaged by relava (not adopting)" >&2
+            continue
+        fi
+        if [ -e "$src/$name_only" ]; then
+            echo "relava sync: $item and $src/$name_only both exist — leaving $item alone (resolve manually)" >&2
+            continue
+        fi
+        mv "$item" "$src/$name_only"
+        echo "relava sync: adopted pre-existing $item into $src/" >&2
+    done
+
     for item in "$src"/*; do
         [ -e "$item" ] || continue
         name_only="$(basename "$item")"
