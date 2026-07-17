@@ -51,6 +51,14 @@ it before any ingest / query / lint operation.
 - Keep `index.md` lean — it's the one file cheap enough to load every session.
 - One topic per file everywhere (pages, sources, log-days) — this is what makes
   syncing across your own machines merge cleanly.
+- **Index entries are for durable, cross-context patterns — not single-topic
+  reference notes.** A page earns an `index.md` line only if it applies regardless
+  of which project you're in (a workflow, a policy, a recurring technique). A page
+  about one specific research topic, paper, or product stays fully queryable in
+  `pages/` — cited by other pages, findable by search — without paying the
+  "loaded every session" cost of an index entry. If a topic-specific page's ideas
+  later generalize into a durable pattern, extract that synthesis into its own
+  cross-cutting page and index *that*, not the narrow topic page.
 
 ## Viewing
 
